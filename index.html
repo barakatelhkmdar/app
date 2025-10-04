@@ -1,0 +1,1045 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<title>حاسبة رسوم الغرفة التجارية ببني سويف</title>
+
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+
+<!-- html2pdf bundle (jsPDF + html2canvas) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" defer></script>
+
+<style>
+  :root{
+    --bg-dark:#020617;          /* slate-950 */
+    --bg-1:#0b1220;
+    --bg-2:#0f172a;             /* slate-900 */
+    --glass: rgba(255,255,255,0.06);
+    --glass-2: rgba(255,255,255,0.10);
+    --border: rgba(255,255,255,0.16);
+    --brand:#7c3aed;            /* violet-600 */
+    --brand-2:#22d3ee;          /* cyan-400 */
+    --brand-3:#38bdf8;          /* sky-400 */
+    --accent:#16a34a;           /* green-600 */
+    --text:#e5e7eb;
+    --muted:#94a3b8;
+    --danger:#ef4444;
+    --warning:#f59e0b;
+  }
+
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0}
+  body{
+    font-family:'Tajawal', system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial;
+    color:var(--text);
+    background:
+      radial-gradient(1200px 600px at var(--mx,50%) var(--my,18%), rgba(34,211,238,0.18), transparent 60%),
+      radial-gradient(900px 420px at calc(100% - var(--mx,50%)) calc(100% - var(--my,18%)), rgba(124,58,237,0.20), transparent 60%),
+      conic-gradient(from 200deg at 60% 20%, #0a1020, #0b1b35, #0a1020);
+    overflow-x:hidden;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  /* BACKDROP CANVAS (particles) */
+  #fx {
+    position:fixed; inset:0; z-index:0; pointer-events:none; opacity:.55;
+    filter: blur(0.2px) saturate(1.1);
+  }
+
+  /* HEADER */
+  header{
+    position:sticky; top:0; z-index:10;
+    backdrop-filter: blur(14px) saturate(1.1);
+    background: linear-gradient(90deg, rgba(2,6,23,.55), rgba(15,23,42,.55));
+    border-bottom:1px solid var(--border);
+  }
+  .container{width:min(1200px,94vw); margin-inline:auto; padding:0 16px;}
+  .brand{
+    display:flex; align-items:center; justify-content:space-between; gap:12px; padding:14px 0;
+  }
+  .logo{
+    width:42px; aspect-ratio:1; border-radius:12px;
+    background: conic-gradient(from 120deg, var(--brand), var(--brand-2), var(--brand-3), var(--brand));
+    box-shadow: 0 8px 28px rgba(124,58,237,.45);
+    position:relative; isolation:isolate;
+  }
+  .logo:after{
+    content:""; position:absolute; inset:2px; border-radius:10px;
+    background: radial-gradient(circle at 30% 30%, rgba(255,255,255,.55), transparent 35%), rgba(255,255,255,.06);
+    mix-blend-mode:overlay;
+  }
+  h1{margin:0; font-size:clamp(18px,2.4vw,28px); letter-spacing:.2px}
+  .subtitle{color:#cbd5e1; font-size:12px; margin-top:4px}
+
+  /* GRID */
+  .grid{display:grid; gap:12px}
+  .cols-3{grid-template-columns: repeat(3, minmax(0,1fr))}
+  .cols-2{grid-template-columns: repeat(2, minmax(0,1fr))}
+  @media(max-width:1024px){ 
+    .cols-3{grid-template-columns:1fr} 
+    .cols-2{grid-template-columns:1fr} 
+  }
+
+  /* CARD (glass) */
+  .card{
+    position:relative;
+    background:
+      linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.035));
+    border:1px solid var(--border);
+    border-radius:20px; padding:16px;
+    box-shadow: 0 10px 40px rgba(0,0,0,.30);
+    transition: transform .2s ease, box-shadow .25s ease, border-color .2s ease;
+    will-change: transform;
+    overflow:hidden;
+  }
+  .card:hover{ transform: translateY(-4px) perspective(1000px) rotateX(1.4deg) rotateY(-1.2deg);
+    box-shadow: 0 18px 70px rgba(56,189,248,.22);
+    border-color: rgba(255,255,255,.28);
+  }
+  .card .shine{
+    position:absolute; inset:-40% -40% auto auto; height:120%; width:120%;
+    background: radial-gradient(600px 200px at var(--mx,50%) var(--my,0%), rgba(34,211,238,.08), transparent 46%);
+    pointer-events:none; z-index:0;
+  }
+  .card > *{position:relative; z-index:1}
+
+  label{display:block; margin-bottom:6px; color:#cbd5e1; font-size:14px;}
+  input, select, textarea{
+    width:100%; padding:14px 16px; border-radius:14px; border:1px solid var(--border);
+    background:rgba(2,6,23,0.55); color:#fff; outline:none; font-size:16px;
+    transition:border-color .2s ease, box-shadow .2s ease, transform .05s ease;
+  }
+  input:focus, select:focus, textarea:focus{ border-color:rgba(124,58,237,.7); box-shadow:0 0 0 5px rgba(124,58,237,.15) }
+  input::placeholder { font-size: 14px; }
+
+  /* BUTTONS */
+  .btns{display:flex; gap:10px; flex-wrap:wrap}
+  button{
+    border:none; padding:14px 18px; border-radius:14px; cursor:pointer; font-weight:800; letter-spacing:.3px;
+    background: linear-gradient(135deg, var(--brand), var(--brand-2)); color:#081229; font-size:16px;
+    box-shadow: 0 10px 28px rgba(124,58,237,.35);
+    transition: transform .12s ease, box-shadow .2s ease, filter .2s ease;
+    min-height:48px;
+    touch-action: manipulation;
+  }
+  button:hover{ transform: translateY(-2px); filter:saturate(1.2); box-shadow: 0 14px 40px rgba(34,211,238,.35) }
+  button:active{ transform: translateY(0) scale(.98) }
+  button.ghost{ background:transparent; color:#e2e8f0; border:1px solid var(--border); box-shadow:none }
+
+  /* TOGGLE سجل (فردي/شركات) */
+  .toggle-group{display:flex; gap:8px}
+  .toggle-btn{
+    flex:1; user-select:none; text-align:center; padding:14px; border-radius:14px;
+    border:1px solid var(--border); background:rgba(2,6,23,.55); color:#e2e8f0; font-size:14px;
+    box-shadow: inset 0 0 0 0 rgba(124,58,237,.0); transition:.2s;
+    min-height:48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .toggle-btn.active{
+    background: radial-gradient(80% 120% at 30% 20%, rgba(56,189,248,.25), rgba(124,58,237,.35));
+    border-color: rgba(255,255,255,.32);
+    box-shadow: inset 0 0 0 2px rgba(124,58,237,.35), 0 8px 26px rgba(56,189,248,.25);
+  }
+
+  /* TABLE */
+  #tableWrap{max-height:420px; overflow:auto; border-radius:16px; -webkit-overflow-scrolling: touch;}
+  table{ width:100%; border-collapse:collapse; direction:rtl; font-size:14px; }
+  th, td{ padding:12px 10px; border-bottom:1px solid rgba(255,255,255,.08); text-align:right }
+  thead th{
+    position:sticky; top:0; z-index:2; background:rgba(2,6,23,.65); backdrop-filter: blur(8px);
+    font-weight:800; color:#cbd5e1; font-size:14px;
+  }
+
+  /* STATS */
+  .muted{color:var(--muted); font-size:14px;}
+  .stat{ font-size: clamp(20px,2.3vw,28px); font-weight:800; letter-spacing:.2px }
+  .total{ font-size: clamp(22px,2.6vw,30px); text-shadow: 0 6px 20px rgba(124,58,237,.28)}
+
+  /* FOOTER */
+  .footer{ color:#a3a3a3; font-size:.85rem; margin:28px 0 40px; text-align:center }
+
+  /* FLOAT TOAST */
+  .toast{
+    position:fixed; right:18px; bottom:18px; background:rgba(2,6,23,.92); color:#e2e8f0;
+    border:1px solid var(--border); border-radius:14px; padding:12px 16px; z-index:40;
+    box-shadow:0 14px 40px rgba(0,0,0,.35); transform: translateY(20px); opacity:0; transition:.25s;
+    max-width: calc(100% - 36px);
+    font-size: 14px;
+  }
+  .toast.show{ transform:none; opacity:1 }
+
+  /* MORPH BLOB - مخفف على الموبايل */
+  .blob{
+    position:fixed; inset:auto auto 10% 8%; width:320px; height:320px; border-radius:50%;
+    background: radial-gradient(closest-side at 40% 40%, rgba(34,211,238,.25), transparent 60%),
+                radial-gradient(closest-side at 70% 70%, rgba(124,58,237,.22), transparent 60%),
+                linear-gradient(120deg, rgba(56,189,248,.22), rgba(124,58,237,.22));
+    filter: blur(20px) saturate(1.2); mix-blend-mode:screen; pointer-events:none; z-index:0;
+    animation: morph 16s ease-in-out infinite;
+  }
+  @media (max-width: 768px) {
+    .blob {
+      width: 220px;
+      height: 220px;
+      opacity: 0.7;
+    }
+  }
+  @keyframes morph{
+    0%{ border-radius: 36% 64% 58% 42% / 40% 36% 64% 60% }
+    25%{ border-radius: 60% 40% 42% 58% / 36% 64% 60% 40% }
+    50%{ border-radius: 44% 56% 62% 38% / 60% 42% 58% 40% }
+    75%{ border-radius: 64% 36% 40% 60% / 44% 56% 36% 64% }
+    100%{ border-radius: 36% 64% 58% 42% / 40% 36% 64% 60% }
+  }
+
+  /* WATERMARK for PDF preview (hidden in UI) */
+  .wm{ position:fixed; inset:auto 16px 16px auto; opacity:.08; font-weight:800; font-size:42px; pointer-events:none; display:none }
+
+  /* ACCENT DIVIDER */
+  .divider{
+    height:1px; border:none; margin:18px 0;
+    background: linear-gradient(90deg, transparent, rgba(124,58,237,.45), rgba(34,211,238,.45), transparent);
+  }
+
+  /* NEW STYLES FOR ADDED SECTIONS */
+  .summary-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-top: 16px;
+  }
+  .summary-card {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 14px;
+    padding: 14px;
+    border: 1px solid var(--border);
+  }
+  .summary-card h3 {
+    margin: 0 0 8px 0;
+    font-size: 14px;
+    color: var(--muted);
+  }
+  .summary-value {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--brand-2);
+  }
+  @media (max-width: 768px) {
+    .summary-grid {
+      grid-template-columns: 1fr;
+    }
+    .summary-card {
+      padding: 12px;
+    }
+    .summary-value {
+      font-size: 16px;
+    }
+  }
+
+  /* Mobile optimizations */
+  @media (max-width: 768px) {
+    .container {
+      padding: 0 12px;
+    }
+    .card {
+      padding: 14px;
+      border-radius: 18px;
+    }
+    input, select, textarea {
+      padding: 16px 14px;
+      font-size: 16px; /* منع التكبير التلقائي على iOS */
+    }
+    button {
+      padding: 16px;
+      font-size: 15px;
+    }
+    .toggle-btn {
+      padding: 12px;
+      font-size: 13px;
+    }
+    .btns {
+      flex-direction: column;
+    }
+    .btns button {
+      width: 100%;
+    }
+    #tableWrap {
+      max-height: 320px;
+    }
+    table {
+      font-size: 13px;
+    }
+    th, td {
+      padding: 10px 8px;
+    }
+  }
+
+  /* Prevent zoom on input focus on iOS */
+  @media screen and (max-width: 768px) {
+    input, select, textarea {
+      font-size: 16px;
+    }
+  }
+
+  /* PDF-specific styles */
+  .pdf-page {
+    page-break-after: always;
+    padding: 15mm;
+    font-family: 'Tajawal', sans-serif;
+    height: 277mm; /* A4 height minus margins */
+    box-sizing: border-box;
+  }
+  .pdf-page:last-child {
+    page-break-after: auto;
+  }
+  .pdf-header, .pdf-footer {
+    text-align: center;
+  }
+  .pdf-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 10px 0;
+    page-break-inside: auto;
+    font-size: 10px;
+  }
+  .pdf-table th, .pdf-table td {
+    border: 1px solid #ddd;
+    padding: 6px;
+    text-align: right;
+  }
+  .pdf-table th {
+    background-color: #f2f2f2;
+  }
+  .pdf-table tr {
+    page-break-inside: avoid;
+    page-break-after: auto;
+  }
+</style>
+</head>
+<body>
+  <canvas id="fx"></canvas>
+  <div class="blob" aria-hidden="true"></div>
+  <div class="wm" aria-hidden="true">BNSW CHAMBER</div>
+
+  <header>
+    <div class="container brand">
+      <div style="display:flex; align-items:center; gap:12px">
+        <div class="logo" aria-hidden="true"></div>
+        <div>
+          <h1>حاسبة رسوم الغرفة التجارية ببني سويف</h1>
+          <div class="subtitle">فكرة: راشد مصطفى راشد</div>
+        </div>
+      </div>
+      <div style="display:flex; align-items:center; gap:10px">
+        <button id="exportBtn" class="ghost" title="تصدير PDF">تصدير PDF</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="container" style="position:relative; z-index:1; padding:18px 0 30px">
+
+    <!-- INPUTS -->
+    <section class="card" id="controlsCard">
+      <div class="shine"></div>
+      <h2 style="margin:0 0 8px; font-size:20px;">المدخلات</h2>
+      <p class="muted" style="margin:0 0 12px; font-size:14px;">أدخل البيانات التالية ثم اضغط <b>احسب الرسوم</b>. يمكنك إضافة تعديلات لرأس المال عبر السنوات.</p>
+
+      <div class="grid cols-3">
+        <div>
+          <label>رأس المال الأولي (ج)</label>
+          <input id="initialCapital" inputmode="decimal" placeholder="مثال: 150000" />
+        </div>
+        <div>
+          <label>سنة البداية</label>
+          <input id="startYear" inputmode="numeric" maxlength="4" placeholder="مثال: 2015" />
+        </div>
+        <div>
+          <label>سنة النهاية</label>
+          <input id="endYear" inputmode="numeric" maxlength="4" placeholder="مثال: 2025" />
+        </div>
+      </div>
+
+      <div style="height:10px"></div>
+      <label>نوع السجل</label>
+      <div class="toggle-group" id="recordTypeBtns">
+        <div class="toggle-btn active" data-value="فردي">فردي</div>
+        <div class="toggle-btn" data-value="شركات">شركات</div>
+      </div>
+      <input type="hidden" id="recordType" value="فردي" />
+
+      <hr class="divider"/>
+
+      <div class="grid cols-3">
+        <div>
+          <label>سنة التعديل</label>
+          <input id="chgYear" inputmode="numeric" maxlength="4" placeholder="مثال: 2019" />
+        </div>
+        <div>
+          <label>رأس المال الجديد (ج)</label>
+          <input id="chgCapital" inputmode="decimal" placeholder="مثال: 300000" />
+        </div>
+        <div>
+          <label>ملاحظة (اختياري)</label>
+          <input id="chgNote" placeholder="مثل: زيادة رأس المال" />
+        </div>
+      </div>
+      <div class="btns" style="margin-top:12px">
+        <button id="addChangeBtn" type="button">إضافة تعديل</button>
+        <button id="clearChangesBtn" class="ghost" type="button">مسح التعديلات</button>
+      </div>
+
+      <div id="changesList" style="margin-top:12px"></div>
+
+      <hr class="divider"/>
+      <div class="btns">
+        <button id="calcBtn" type="button">احسب الرسوم</button>
+        <button id="clearAllBtn" class="ghost" type="button">مسح الكل</button>
+      </div>
+    </section>
+
+    <!-- STATS -->
+    <section class="grid cols-3">
+      <div class="card">
+        <div class="shine"></div>
+        <div class="muted">إجمالي رسوم الغرفة</div>
+        <div class="stat" id="roomFees">0.00 ج</div>
+      </div>
+      <div class="card">
+        <div class="shine"></div>
+        <div class="muted">إجمالي رسوم الشعبة</div>
+        <div class="stat" id="sectorFees">0.00 ج</div>
+      </div>
+      <div class="card">
+        <div class="shine"></div>
+        <div class="muted">إجمالي الغرامات</div>
+        <div class="stat" id="penalties">0.00 ج</div>
+      </div>
+    </section>
+
+    <section class="card" id="grandCard">
+      <div class="shine"></div>
+      <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap">
+        <h2 style="margin:0; font-size:20px;">الإجمالي الكلّي</h2>
+      </div>
+      <div class="total stat" id="grandTotal">0.00 ج</div>
+    </section>
+
+    <!-- TABLE -->
+    <section class="card" id="tableCard">
+      <div class="shine"></div>
+      <h2 style="font-size:20px;">التفصيل السنوي</h2>
+      <div id="tableWrap">
+        <table id="yearTable">
+          <thead>
+            <tr>
+              <th>السنة</th>
+              <th>رأس المال</th>
+              <th>رسوم الغرفة</th>
+              <th>رسوم الشعبة</th>
+              <th>الغرامة</th>
+              <th>الإجمالي</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      
+      <!-- NEW SECTION: الرسوم الحالية والمتأخرة -->
+      <div class="summary-grid">
+        <div class="summary-card">
+          <h3>رسوم الغرفة الحالية (آخر سنة)</h3>
+          <div class="summary-value" id="currentRoomFee">0.00 ج</div>
+        </div>
+        <div class="summary-card">
+          <h3>إجمالي رسوم الغرفة المتأخرة</h3>
+          <div class="summary-value" id="delayedRoomFees">0.00 ج</div>
+        </div>
+        <div class="summary-card">
+          <h3>رسوم الشعبة الحالية (آخر سنة)</h3>
+          <div class="summary-value" id="currentSectorFee">0.00 ج</div>
+        </div>
+        <div class="summary-card">
+          <h3>إجمالي رسوم الشعبة المتأخرة</h3>
+          <div class="summary-value" id="delayedSectorFees">0.00 ج</div>
+        </div>
+      </div>
+    </section>
+
+    <p class="footer">© <span id="yearNow"></span> – إعداد وبرمجة: راشد مصطفى</p>
+  </main>
+
+  <div id="toaster" class="toast" role="status" aria-live="polite"></div>
+
+<script>
+/* ------------------ Global helpers ------------------ */
+const root = document.documentElement;
+const nf = new Intl.NumberFormat('en-US',{minimumFractionDigits:2, maximumFractionDigits:2}); // English digits
+const $ = (q)=>document.querySelector(q);
+const $$ = (q)=>Array.from(document.querySelectorAll(q));
+
+// Detect mobile device
+function isMobile() {
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || 
+         (window.innerWidth <= 768);
+}
+
+function toast(msg, type='info'){
+  const t = $('#toaster');
+  t.textContent = msg;
+  t.style.borderColor = (type==='error')? 'rgba(239,68,68,.6)' : (type==='warn'? 'rgba(245,158,11,.6)' : 'var(--border)');
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2200);
+}
+
+/* ------------------ Futuristic FX ------------------ */
+// Parallax background cursor - disable on mobile for performance
+let mx = window.innerWidth * .5, my = window.innerHeight * .18;
+const lerp=(a,b,t)=>a+(b-a)*t;
+if(!isMobile()) {
+  window.addEventListener('mousemove', (e)=>{ mx=e.clientX; my=e.clientY; });
+}
+function raf(){
+  // smooth update CSS vars
+  const cs = getComputedStyle(root);
+  const curX = parseFloat(cs.getPropertyValue('--mx')||'50');
+  const curY = parseFloat(cs.getPropertyValue('--my')||'18');
+  const nx = lerp(curX, (mx/window.innerWidth)*100, .08);
+  const ny = lerp(curY, (my/window.innerHeight)*100, .08);
+  root.style.setProperty('--mx', nx.toFixed(2)+'%');
+  root.style.setProperty('--my', ny.toFixed(2)+'%');
+  requestAnimationFrame(raf);
+}
+root.style.setProperty('--mx','50%'); root.style.setProperty('--my','18%');
+if(!isMobile()) {
+  requestAnimationFrame(raf);
+}
+
+// Tilt on cards - disable on mobile
+if(!isMobile()) {
+  $$('.card').forEach(card=>{
+    card.addEventListener('pointermove', e=>{
+      const r = card.getBoundingClientRect();
+      const x = (e.clientX - r.left)/r.width, y = (e.clientY - r.top)/r.height;
+      const rx = (y-.5)*4, ry = (x-.5)*-4;
+      card.style.transform = `perspective(1000px) rotateX(${rx}deg) rotateY(${ry}deg) translateY(-2px)`;
+    });
+    card.addEventListener('pointerleave', ()=>{ card.style.transform=''; });
+  });
+}
+
+// Particles canvas - reduce on mobile
+const cnv = document.getElementById('fx');
+const ctx = cnv.getContext('2d');
+let W,H,parts=[]; function rs(){ W=cnv.width=innerWidth; H=cnv.height=innerHeight; } rs(); addEventListener('resize', rs);
+function spawn(){
+  const n = isMobile() ? 40 : 120; // Reduce particles on mobile
+  parts = Array.from({length:n}, ()=>({
+    x: Math.random()*W, y: Math.random()*H,
+    vx:(Math.random()-.5)*.25, vy:(Math.random()-.5)*.25,
+    r: Math.random()*1.5+0.5, a: Math.random()*1, hue: 190+Math.random()*120
+  }));
+}
+spawn();
+(function loop(){
+  ctx.clearRect(0,0,W,H);
+  parts.forEach(p=>{
+    p.x+=p.vx; p.y+=p.vy;
+    if(p.x<0||p.x>W) p.vx*=-1;
+    if(p.y<0||p.y>H) p.vy*=-1;
+    ctx.globalAlpha = 0.55*p.a;
+    ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+    ctx.fillStyle = `hsla(${p.hue}, 80%, 60%, .8)`; ctx.fill();
+  });
+  // soft links - reduce on mobile
+  const maxLinks = isMobile() ? 6 : 12;
+  for(let i=0; i<parts.length; i++){
+    for(let j=i+1; j<i+maxLinks && j<parts.length; j++){
+      const dx=parts[i].x-parts[j].x, dy=parts[i].y-parts[j].y, d=Math.hypot(dx,dy);
+      if(d<90){
+        ctx.globalAlpha = 0.08;
+        ctx.strokeStyle = 'rgba(56,189,248,.6)';
+        ctx.beginPath(); ctx.moveTo(parts[i].x, parts[i].y); ctx.lineTo(parts[j].x, parts[j].y); ctx.stroke();
+      }
+    }
+  }
+  requestAnimationFrame(loop);
+})();
+
+/* ------------------ Business logic ------------------ */
+// Changes list
+let changes = [];
+function renderChanges(){
+  const wrap = $('#changesList');
+  if(!changes.length){ wrap.innerHTML = '<div class="muted">لا توجد تعديلات مضافة.</div>'; return; }
+  const items = changes.map((c, i)=>
+    `<div class="card" style="padding:10px; margin:8px 0">
+       <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+         <div style="flex:1;"><b>${c.year}</b> — رأس المال: <b>${nf.format(c.capital)}</b> ج ${c.note?`<span class="muted">— ${c.note}</span>`:''}</div>
+         <div class="btns">
+           <button class="ghost" data-edit="${i}" style="padding:8px 12px; font-size:14px;">تعديل</button>
+           <button class="ghost" style="border-color:rgba(239,68,68,.45); color:#fecaca; padding:8px 12px; font-size:14px;" data-del="${i}">حذف</button>
+         </div>
+       </div>
+     </div>`).join('');
+  wrap.innerHTML = items;
+  wrap.querySelectorAll('button[data-del]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{ changes.splice(+btn.dataset.del,1); renderChanges(); });
+  });
+  wrap.querySelectorAll('button[data-edit]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const c = changes[+btn.dataset.edit];
+      $('#chgYear').value = c.year;
+      $('#chgCapital').value = c.capital;
+      $('#chgNote').value = c.note || '';
+      changes.splice(+btn.dataset.edit,1); renderChanges();
+    });
+  });
+}
+$('#addChangeBtn').addEventListener('click', ()=>{
+  const y = +$('#chgYear').value.trim();
+  const c = +$('#chgCapital').value.trim();
+  const note = $('#chgNote').value.trim();
+  if(!y || !c){ return toast('سنة أو قيمة غير صحيحة', 'error'); }
+  changes.push({year:y, capital:c, note});
+  changes.sort((a,b)=>a.year-b.year);
+  $('#chgYear').value=''; $('#chgCapital').value=''; $('#chgNote').value='';
+  renderChanges();
+});
+$('#clearChangesBtn').addEventListener('click', ()=>{ changes = []; renderChanges(); });
+renderChanges();
+
+// Toggle فردي/شركات
+$('#recordTypeBtns').addEventListener('click', (e)=>{
+  const btn = e.target.closest('.toggle-btn'); if(!btn) return;
+  $$('#recordTypeBtns .toggle-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active'); $('#recordType').value = btn.dataset.value;
+});
+
+// Fee rules
+function roomFeeForCapital(cap){
+  if(cap <= 12000) return 24.0;
+  if(cap <= 1000000) return cap * 0.002;
+  return 2000.0;
+}
+
+function compute(){
+  const initialCapital = +$('#initialCapital').value.trim();
+  const startYear = +$('#startYear').value.trim();
+  const endYear = +$('#endYear').value.trim();
+  const type = $('#recordType').value;
+  if(!initialCapital || !startYear || !endYear || endYear < startYear){
+    toast('تحقق من المدخلات أولاً', 'warn'); return null;
+  }
+  const currentYear = new Date().getFullYear();
+  const capitalByYear = {};
+  for(let y=startYear; y<=endYear; y++) capitalByYear[y] = initialCapital;
+  changes.sort((a,b)=>a.year-b.year);
+  for(const ch of changes){ if(ch.year < startYear) continue; for(let y=ch.year; y<=endYear; y++) capitalByYear[y] = ch.capital; }
+
+  const lastPenaltyYear = currentYear - 1;
+  let totalRoom=0, totalSector=0, totalPen=0; 
+  let currentRoomFee = 0, currentSectorFee = 0;
+  let delayedRoomFees = 0, delayedSectorFees = 0;
+  
+  const rows=[];
+  for(let y=startYear; y<=endYear; y++){
+    const cap = capitalByYear[y] ?? initialCapital;
+    const room = roomFeeForCapital(cap);
+    let sector = 0;
+    
+    // حساب رسوم الشعبة حسب السنة
+    if(y < 2002) {
+      sector = (type==='فردي') ? 2 : 2; // قبل 2002: 2 جنيه للفردي والشركات
+    } else if(y>=2002 && y<=2017) {
+      sector = (type==='فردي') ? 5 : 10;
+    } else if(y>=2018 && y<=2019) {
+      sector = (type==='فردي') ? 10 : 20;
+    } else if(y>=2020 && y<=2024) {
+      sector = (type==='فردي') ? 25 : 50;
+    } else if(y>=2025) {
+      sector = (type==='فردي') ? 100 : 200;
+    }
+    
+    const penalty = (y <= lastPenaltyYear) ? (room/4) : 0;
+    const sum = room + sector + penalty;
+    
+    totalRoom += room; 
+    totalSector += sector; 
+    totalPen += penalty;
+    
+    // حساب الرسوم الحالية والمتأخرة
+    if (y === endYear) {
+      currentRoomFee = room;
+      currentSectorFee = sector;
+    }
+    
+    if (y < currentYear) {
+      delayedRoomFees += room;
+      delayedSectorFees += sector;
+    }
+    
+    rows.push({year:y, capital:cap, room, sector, penalty, sum});
+  }
+  
+  return {
+    rows, 
+    totals:{
+      room:totalRoom, 
+      sector:totalSector, 
+      pen:totalPen, 
+      grand: totalRoom+totalSector+totalPen
+    }, 
+    currentFees: {
+      room: currentRoomFee,
+      sector: currentSectorFee
+    },
+    delayedFees: {
+      room: delayedRoomFees,
+      sector: delayedSectorFees
+    },
+    meta:{
+      initialCapital, startYear, endYear, type, lastPenaltyYear
+    }
+  };
+}
+
+/* -------------- Rendering -------------- */
+function animateNumber(el, to, duration=900){
+  const from = +(el.dataset.val || '0');
+  const start = performance.now();
+  function frame(t){
+    const p = Math.min(1, (t-start)/duration);
+    const ease = 1 - Math.pow(1-p, 3);
+    const v = from + (to-from)*ease;
+    el.textContent = nf.format(v) + ' ج';
+    if(p<1) requestAnimationFrame(frame); else el.dataset.val = to;
+  }
+  requestAnimationFrame(frame);
+}
+
+function renderTable(rows){
+  const tb = $('#yearTable tbody');
+  const frag = document.createDocumentFragment(); tb.innerHTML='';
+  for(const r of rows){
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${r.year}</td>
+                    <td>${nf.format(r.capital)}</td>
+                    <td>${nf.format(r.room)}</td>
+                    <td>${nf.format(r.sector)}</td>
+                    <td>${nf.format(r.penalty)}</td>
+                    <td>${nf.format(r.sum)}</td>`;
+    frag.appendChild(tr);
+  }
+  tb.appendChild(frag);
+}
+
+function calcAndRender(){
+  const res = compute(); if(!res) return;
+  animateNumber($('#roomFees'), res.totals.room);
+  animateNumber($('#sectorFees'), res.totals.sector);
+  animateNumber($('#penalties'), res.totals.pen);
+  animateNumber($('#grandTotal'), res.totals.grand, 1100);
+  
+  // تحديث الرسوم الحالية والمتأخرة
+  $('#currentRoomFee').textContent = nf.format(res.currentFees.room) + ' ج';
+  $('#currentSectorFee').textContent = nf.format(res.currentFees.sector) + ' ج';
+  $('#delayedRoomFees').textContent = nf.format(res.delayedFees.room) + ' ج';
+  $('#delayedSectorFees').textContent = nf.format(res.delayedFees.sector) + ' ج';
+  
+  renderTable(res.rows);
+  // حفظ يدوي (بدون استرجاع تلقائي عند الفتح)
+  try{
+    const pack = {inputs:{
+      initialCapital:$('#initialCapital').value,
+      startYear:$('#startYear').value,
+      endYear:$('#endYear').value,
+      recordType:$('#recordType').value
+    }, changes};
+    localStorage.setItem('fees:last', JSON.stringify(pack));
+  }catch{}
+}
+
+/* -------------- PDF Export (Pro) -------------- */
+function makeQR(text, size=96){
+  const c=document.createElement('canvas'); c.width=c.height=size;
+  const ctx=c.getContext('2d');
+  // Mini pseudo QR (placeholder svg-like grid) to avoid external libs
+  ctx.fillStyle='#fff'; ctx.fillRect(0,0,size,size);
+  ctx.fillStyle='#000';
+  const rnd=(seed)=>{ let x=seed; return ()=> (x = (x*1664525+1013904223)%4294967296)/4294967296 }
+  const r=rnd(text.length);
+  const n=21; const cell=Math.floor(size/n);
+  for(let i=0;i<n;i++){
+    for(let j=0;j<n;j++){
+      if((i<7&&j<7)||(i>n-8&&j<7)||(i<7&&j>n-8)) { // finder squares
+        if((i%6===0||j%6===0)||(i%6===3&&j%6===3)) ctx.fillRect(j*cell,i*cell,cell,cell);
+      } else if(r()>0.62){ ctx.fillRect(j*cell,i*cell,cell,cell); }
+    }
+  }
+  return c.toDataURL('image/png');
+}
+
+async function exportPDF(){
+  if(isMobile()) {
+    if(!confirm("عملية إنشاء PDF قد تستغرق بعض الوقت على الجهاز المحمول. هل تريد المتابعة؟")) {
+      return;
+    }
+  }
+  
+  const comp = compute(); if(!comp){ return; }
+  const {rows, totals, currentFees, delayedFees, meta} = comp;
+
+  // إنشاء عنصر PDF الرئيسي
+  const pdfContainer = document.createElement('div');
+  pdfContainer.style.fontFamily = 'Tajawal, sans-serif';
+  pdfContainer.style.direction = 'rtl';
+  pdfContainer.style.width = '100%';
+  pdfContainer.style.background = '#fff';
+  pdfContainer.style.color = '#000';
+
+  // صفحة الغلاف والمعلومات الأساسية
+  const coverPage = document.createElement('div');
+  coverPage.className = 'pdf-page';
+  coverPage.innerHTML = `
+    <div style="text-align: center; padding: 30px 20px; height: 100%; display: flex; flex-direction: column; justify-content: center;">
+      <h1 style="color: #7c3aed; font-size: 28px; margin-bottom: 10px;">تقرير حاسبة رسوم الغرفة التجارية</h1>
+      <h2 style="color: #0f172a; font-size: 22px; margin-bottom: 30px;">بني سويف</h2>
+      <div style="margin: 30px 0;">
+        <img src="${makeQR('Beni Suef Chamber Fees')}" alt="QR Code" style="width: 120px; height: 120px;">
+      </div>
+      <div style="margin-top: 40px;">
+        <p style="font-size: 16px;">تاريخ الإصدار: ${new Date().toLocaleDateString('ar-EG')}</p>
+        <p style="font-size: 14px; color: #64748b;">إعداد وبرمجة: راشد مصطفى</p>
+      </div>
+    </div>
+  `;
+  pdfContainer.appendChild(coverPage);
+
+  // صفحة المدخلات والملخص
+  const inputPage = document.createElement('div');
+  inputPage.className = 'pdf-page';
+  inputPage.innerHTML = `
+    <div style="padding: 20px;">
+      <h2 style="color: #7c3aed; border-bottom: 2px solid #7c3aed; padding-bottom: 10px; margin-top: 0;">المدخلات والملخص</h2>
+      
+      <div style="background: #f8fafc; padding: 15px; border-radius: 8px; margin: 15px 0;">
+        <h3 style="color: #0f172a; margin-top: 0;">المدخلات الأساسية</h3>
+        <table style="width: 100%;">
+          <tr>
+            <td style="padding: 8px; width: 40%;"><strong>رأس المال الأولي:</strong></td>
+            <td style="padding: 8px;">${nf.format(meta.initialCapital)} ج</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px;"><strong>الفترة:</strong></td>
+            <td style="padding: 8px;">من ${meta.startYear} إلى ${meta.endYear}</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px;"><strong>نوع السجل:</strong></td>
+            <td style="padding: 8px;">${meta.type}</td>
+          </tr>
+        </table>
+      </div>
+
+      ${changes.length > 0 ? `
+      <div style="background: #f0fdf4; padding: 15px; border-radius: 8px; margin: 15px 0;">
+        <h3 style="color: #0f172a; margin-top: 0;">تعديلات رأس المال</h3>
+        <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+          <thead>
+            <tr>
+              <th style="border: 1px solid #ddd; padding: 8px; background: #e8f5e8;">سنة التعديل</th>
+              <th style="border: 1px solid #ddd; padding: 8px; background: #e8f5e8;">رأس المال الجديد</th>
+              <th style="border: 1px solid #ddd; padding: 8px; background: #e8f5e8;">ملاحظة</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${changes.map(c => `
+              <tr>
+                <td style="border: 1px solid #ddd; padding: 8px;">${c.year}</td>
+                <td style="border: 1px solid #ddd; padding: 8px;">${nf.format(c.capital)} ج</td>
+                <td style="border: 1px solid #ddd; padding: 8px;">${c.note || '-'}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+      ` : ''}
+
+      <div style="background: #fffbeb; padding: 15px; border-radius: 8px; margin: 15px 0;">
+        <h3 style="color: #0f172a; margin-top: 0;">الرسوم الحالية والمتأخرة</h3>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div style="background: white; padding: 10px; border-radius: 6px; border-left: 4px solid #7c3aed;">
+            <div style="color: #64748b; font-size: 13px;">رسوم الغرفة الحالية (${meta.endYear})</div>
+            <div style="font-weight: bold; font-size: 16px; color: #7c3aed;">${nf.format(currentFees.room)} ج</div>
+          </div>
+          <div style="background: white; padding: 10px; border-radius: 6px; border-left: 4px solid #ef4444;">
+            <div style="color: #64748b; font-size: 13px;">إجمالي رسوم الغرفة المتأخرة</div>
+            <div style="font-weight: bold; font-size: 16px; color: #ef4444;">${nf.format(delayedFees.room)} ج</div>
+          </div>
+          <div style="background: white; padding: 10px; border-radius: 6px; border-left: 4px solid #7c3aed;">
+            <div style="color: #64748b; font-size: 13px;">رسوم الشعبة الحالية (${meta.endYear})</div>
+            <div style="font-weight: bold; font-size: 16px; color: #7c3aed;">${nf.format(currentFees.sector)} ج</div>
+          </div>
+          <div style="background: white; padding: 10px; border-radius: 6px; border-left: 4px solid #ef4444;">
+            <div style="color: #64748b; font-size: 13px;">إجمالي رسوم الشعبة المتأخرة</div>
+            <div style="font-weight: bold; font-size: 16px; color: #ef4444;">${nf.format(delayedFees.sector)} ج</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="background: #f0f9ff; padding: 15px; border-radius: 8px; margin: 15px 0;">
+        <h3 style="color: #0f172a; margin-top: 0;">الإجماليات</h3>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div style="background: white; padding: 10px; border-radius: 6px;">
+            <div style="color: #64748b; font-size: 13px;">إجمالي رسوم الغرفة</div>
+            <div style="font-weight: bold; font-size: 16px;">${nf.format(totals.room)} ج</div>
+          </div>
+          <div style="background: white; padding: 10px; border-radius: 6px;">
+            <div style="color: #64748b; font-size: 13px;">إجمالي رسوم الشعبة</div>
+            <div style="font-weight: bold; font-size: 16px;">${nf.format(totals.sector)} ج</div>
+          </div>
+          <div style="background: white; padding: 10px; border-radius: 6px;">
+            <div style="color: #64748b; font-size: 13px;">إجمالي الغرامات</div>
+            <div style="font-weight: bold; font-size: 16px; color: #ef4444;">${nf.format(totals.pen)} ج</div>
+          </div>
+          <div style="background: #ecfdf5; padding: 10px; border-radius: 6px; border: 2px solid #10b981;">
+            <div style="color: #047857; font-size: 13px;">الإجمالي الكلّي</div>
+            <div style="font-weight: bold; font-size: 18px; color: #065f46;">${nf.format(totals.grand)} ج</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+  pdfContainer.appendChild(inputPage);
+
+  // صفحة التفصيل السنوي
+  const detailPage = document.createElement('div');
+  detailPage.className = 'pdf-page';
+  
+  // تقسيم الجدول إلى أجزاء إذا كان كبيراً
+  const rowsPerPage = 25;
+  const totalDetailPages = Math.ceil(rows.length / rowsPerPage);
+  
+  for (let pageNum = 0; pageNum < totalDetailPages; pageNum++) {
+    const startIdx = pageNum * rowsPerPage;
+    const endIdx = Math.min(startIdx + rowsPerPage, rows.length);
+    const pageRows = rows.slice(startIdx, endIdx);
+    
+    const pageContent = document.createElement('div');
+    pageContent.className = 'pdf-page';
+    pageContent.innerHTML = `
+      <div style="padding: 20px;">
+        <h2 style="color: #7c3aed; border-bottom: 2px solid #7c3aed; padding-bottom: 10px; margin-top: 0;">
+          التفصيل السنوي ${totalDetailPages > 1 ? `(صفحة ${pageNum + 1} من ${totalDetailPages})` : ''}
+        </h2>
+        
+        <table class="pdf-table">
+          <thead>
+            <tr>
+              <th>السنة</th>
+              <th>رأس المال</th>
+              <th>رسوم الغرفة</th>
+              <th>رسوم الشعبة</th>
+              <th>الغرامة</th>
+              <th>الإجمالي</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${pageRows.map(r => `
+              <tr>
+                <td>${r.year}</td>
+                <td>${nf.format(r.capital)}</td>
+                <td>${nf.format(r.room)}</td>
+                <td>${nf.format(r.sector)}</td>
+                <td>${nf.format(r.penalty)}</td>
+                <td style="font-weight: bold;">${nf.format(r.sum)}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+        
+        ${pageNum === totalDetailPages - 1 ? `
+          <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #e5e7eb; text-align: center;">
+            <p style="font-size: 14px; color: #64748b;">تم إنشاء هذا التقرير بواسطة حاسبة رسوم الغرفة التجارية ببني سويف</p>
+            <p style="font-size: 12px; color: #94a3b8;">© ${new Date().getFullYear()} - إعداد وبرمجة: راشد مصطفى</p>
+          </div>
+        ` : ''}
+      </div>
+    `;
+    pdfContainer.appendChild(pageContent);
+  }
+
+  // إعدادات PDF
+  const opt = {
+    margin: [10, 10, 10, 10],
+    filename: `تقرير-حاسبة-الغرفة-بني-سويف-${Date.now()}.pdf`,
+    image: { type: 'jpeg', quality: 0.98 },
+    html2canvas: { 
+      scale: 2, 
+      useCORS: true, 
+      background: '#ffffff',
+      logging: false,
+    },
+    jsPDF: { 
+      unit: 'mm', 
+      format: 'a4', 
+      orientation: 'portrait',
+      compress: true
+    }
+  };
+
+  // إنشاء PDF
+  try {
+    const worker = html2pdf().set(opt).from(pdfContainer).toPdf();
+    const pdf = await worker.get('pdf');
+    
+    // إضافة أرقام الصفحات
+    const totalPages = pdf.internal.getNumberOfPages();
+    for (let i = 1; i <= totalPages; i++) {
+      pdf.setPage(i);
+      pdf.setFontSize(10);
+      pdf.setTextColor(150);
+      pdf.text(`صفحة ${i} من ${totalPages}`, pdf.internal.pageSize.getWidth() - 20, pdf.internal.pageSize.getHeight() - 10);
+    }
+    
+    pdf.save(opt.filename);
+    toast('تم تصدير PDF بنجاح');
+  } catch (error) {
+    console.error('Error generating PDF:', error);
+    toast('حدث خطأ أثناء إنشاء PDF', 'error');
+  }
+}
+
+/* -------------- Wire UI -------------- */
+$('#calcBtn').addEventListener('click', calcAndRender);
+$('#clearAllBtn').addEventListener('click', ()=>{
+  ['#initialCapital','#startYear','#endYear'].forEach(sel=>$(sel).value='');
+  changes=[]; renderChanges();
+  $('#yearTable tbody').innerHTML='';
+  ['#roomFees','#sectorFees','#penalties','#grandTotal'].forEach(sel=>{ const el=$(sel); el.dataset.val='0'; el.textContent='0.00 ج'; });
+  // مسح القيم الجديدة
+  ['#currentRoomFee','#currentSectorFee','#delayedRoomFees','#delayedSectorFees'].forEach(sel=>{ $(sel).textContent='0.00 ج'; });
+  toast('تم مسح كل البيانات');
+});
+$('#exportBtn').addEventListener('click', exportPDF);
+
+// Keyboard shortcuts - disable on mobile
+if(!isMobile()) {
+  window.addEventListener('keydown', (e)=>{
+    if((e.ctrlKey||e.metaKey) && e.key.toLowerCase()==='e'){ e.preventDefault(); $('#exportBtn').click(); }
+    if((e.ctrlKey||e.metaKey) && e.key.toLowerCase()==='k'){ e.preventDefault(); $('#calcBtn').click(); }
+  });
+}
+
+/* -------------- Init (no auto-restore!) -------------- */
+document.getElementById('yearNow').textContent = new Date().getFullYear();
+// عمداً لا نسترجع من localStorage عند التحميل — الصفحة تبدأ فاضية كما طلبت.
+</script>
+</body>
+</html>
