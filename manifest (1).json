@@ -1,0 +1,11 @@
+{
+  "background_color": "#ffffff",
+  "dir": "ltr",
+  "display": "standalone",
+  "name": "app-6hnu.vercel",
+  "orientation": "any",
+  "scope": "/",
+  "short_name": "app-6hnu.vercel",
+  "start_url": "/index.html",
+  "theme_color": "#ffffff"
+}
