@@ -2,12 +2,10 @@
   "background_color": "#ffffff",
   "dir": "ltr",
   "display": "standalone",
-  "name": "Calc",
+  "name": "app-97pp.vercel",
   "orientation": "any",
   "scope": "/",
   "short_name": "app-97pp.vercel",
   "start_url": "/",
-  "theme_color": "#ffffff",
-  "id": "app-97pp.vercel",
-  "description": "Calculator"
+  "theme_color": "#ffffff"
 }

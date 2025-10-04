@@ -6,8 +6,9 @@
   "orientation": "any",
   "scope": "/",
   "short_name": "app-97pp.vercel",
-  "start_url": "/",
+  "start_url": "/index.html",
   "theme_color": "#ffffff",
   "id": "app-97pp.vercel",
-  "description": "Calculator"
+  "description": "Calculator",
+  "lang": "ar"
 }
